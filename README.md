@@ -1,13 +1,13 @@
 # hanzi
 
-Static GitHub Pages overview for 3,000 widely used simplified Chinese characters.
+Static GitHub Pages overview for 10,000 simplified Chinese characters.
 
 ## Files
 
 - `index.html`: page shell
 - `styles.css`: visual theme and square card grid
 - `app.js`: renders the sections in groups of 100
-- `scripts/build_hanzi_data.py`: merges the source datasets into `data/hanzi-3000.js`
+- `scripts/build_hanzi_data.py`: merges the source datasets into `data/hanzi-10000.js`
 
 ## Rebuild data
 
@@ -15,4 +15,4 @@ Static GitHub Pages overview for 3,000 widely used simplified Chinese characters
 python scripts/build_hanzi_data.py
 ```
 
-The build script downloads the source character list and Unicode Unihan readings if they are missing, then writes `data/hanzi-3000.js`. That keeps the front end static and makes expanding to a larger set mostly a data-source problem.
+The build script now writes `data/hanzi-10000.js` by keeping the original 3,000 HSK-backed rows first and backfilling the rest from Unicode Unihan metadata. Use `python scripts/build_hanzi_data.py --limit 3000` or another limit if you want a smaller export.

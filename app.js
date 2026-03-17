@@ -1,5 +1,6 @@
 const entries = Array.isArray(window.HANZI_DATA) ? window.HANZI_DATA : [];
 const sectionSize = 100;
+const sectionsPerFrame = 5;
 const container = document.getElementById("hanzi-grid");
 
 function buildCard(entry) {
@@ -51,14 +52,25 @@ function render() {
     return;
   }
 
-  const fragment = document.createDocumentFragment();
+  let index = 0;
 
-  for (let index = 0; index < entries.length; index += sectionSize) {
-    const slice = entries.slice(index, index + sectionSize);
-    fragment.appendChild(buildSection(index, slice));
+  function appendBatch() {
+    const fragment = document.createDocumentFragment();
+
+    for (let count = 0; count < sectionsPerFrame && index < entries.length; count += 1) {
+      const slice = entries.slice(index, index + sectionSize);
+      fragment.appendChild(buildSection(index, slice));
+      index += sectionSize;
+    }
+
+    container.appendChild(fragment);
+
+    if (index < entries.length) {
+      window.requestAnimationFrame(appendBatch);
+    }
   }
 
-  container.appendChild(fragment);
+  window.requestAnimationFrame(appendBatch);
 }
 
 render();
