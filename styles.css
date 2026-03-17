@@ -133,6 +133,8 @@ body::before {
 .hanzi-section {
   display: grid;
   gap: 16px;
+  contain: paint style;
+  content-visibility: auto;
 }
 
 .section-header {
@@ -174,6 +176,11 @@ body::before {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(106px, 1fr));
   gap: 12px;
+  contain: layout paint;
+}
+
+.section-grid[data-state="idle"] {
+  opacity: 0.35;
 }
 
 .card {
