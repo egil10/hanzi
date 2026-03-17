@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hanzi Atlas</title>
+    <meta
+      name="description"
+      content="A minimal GitHub Pages overview of 3,000 widely used simplified Chinese characters with pinyin and short English glosses."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="hero-mark">字</p>
+        <div class="hero-copy">
+          <p class="eyebrow">Traditional mood. Minimal structure.</p>
+          <h1>Hanzi Atlas</h1>
+          <p class="subtitle">
+            3,000 widely used simplified Chinese characters, arranged as a calm scroll of square cards.
+          </p>
+        </div>
+        <div class="hero-meta">
+          <p>简体字</p>
+          <p>Pinyin</p>
+          <p>Short gloss</p>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro">
+          <p>
+            Each marker introduces the next hundred characters. Cards show the simplified form first, with pinyin,
+            a tiny English gloss, and the traditional form when it differs.
+          </p>
+        </section>
+
+        <section class="legend" aria-label="Legend">
+          <span>简</span>
+          <span>拼音</span>
+          <span>英</span>
+          <span>繁</span>
+        </section>
+
+        <div id="hanzi-grid" class="sections" aria-live="polite"></div>
+      </main>
+    </div>
+
+    <script src="data/hanzi-3000.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
