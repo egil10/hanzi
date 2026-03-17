@@ -8,25 +8,35 @@ const unloadDistance = 2200;
 const container = document.getElementById("hanzi-grid");
 const sections = [];
 
-function buildCard(entry) {
-  const article = document.createElement("article");
-  article.className = "card";
-  article.dataset.sameScript = String(entry.hanzi === entry.traditional);
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[char];
+  });
+}
 
-  article.innerHTML = `
-    <span class="rank">${String(entry.rank).padStart(4, "0")}</span>
-    <span class="traditional" aria-label="Traditional form">${entry.traditional || ""}</span>
-    <div class="hanzi" lang="zh-Hans">${entry.hanzi}</div>
-    <div class="pinyin">${entry.pinyin || "&nbsp;"}</div>
-    <div class="english">${entry.english || "&nbsp;"}</div>
+function buildCardMarkup(entry) {
+  const hanzi = escapeHtml(entry.hanzi || "");
+  const traditional = escapeHtml(entry.traditional || "");
+  const pinyin = entry.pinyin ? escapeHtml(entry.pinyin) : "&nbsp;";
+  const english = entry.english ? escapeHtml(entry.english) : "&nbsp;";
+  const titleBits = [entry.hanzi, entry.pinyin, entry.english].filter(Boolean).join(" | ");
+
+  return `
+    <article class="card" data-same-script="${entry.hanzi === entry.traditional}" title="${escapeHtml(titleBits)}">
+      <span class="rank">${String(entry.rank).padStart(4, "0")}</span>
+      <span class="traditional" aria-label="Traditional form">${traditional}</span>
+      <div class="hanzi" lang="zh-Hans">${hanzi}</div>
+      <div class="pinyin">${pinyin}</div>
+      <div class="english">${english}</div>
+    </article>
   `;
-
-  const titleBits = [entry.hanzi];
-  if (entry.pinyin) titleBits.push(entry.pinyin);
-  if (entry.english) titleBits.push(entry.english);
-  article.title = titleBits.join(" | ");
-
-  return article;
 }
 
 function getColumnCount(width) {
@@ -44,7 +54,7 @@ function getGridMetrics(element, itemCount) {
   const cardWidth = (width - gapSize * (columns - 1)) / columns;
   const gridHeight = rows * cardWidth + Math.max(0, rows - 1) * gapSize;
 
-  return { columns, rows, gridHeight };
+  return { gridHeight };
 }
 
 function updateSectionHeight(record) {
@@ -55,9 +65,10 @@ function updateSectionHeight(record) {
 function renderSection(record) {
   updateSectionHeight(record);
 
-  const fragment = document.createDocumentFragment();
-  record.items.forEach((entry) => fragment.appendChild(buildCard(entry)));
-  record.grid.replaceChildren(fragment);
+  if (record.grid.innerHTML !== record.markup) {
+    record.grid.innerHTML = record.markup;
+  }
+
   record.grid.dataset.state = "ready";
   record.rendered = true;
 }
@@ -73,24 +84,48 @@ function clearSection(record) {
   record.rendered = false;
 }
 
-function buildSection(startIndex, items) {
+function buildSection(startIndex, items, totalSections) {
   const section = document.createElement("section");
   section.className = "hanzi-section";
   section.id = `set-${startIndex + 1}`;
 
+  const sectionIndex = Math.floor(startIndex / sectionSize);
   const endIndex = startIndex + items.length;
+  const previousHref = sectionIndex > 0 ? `#set-${startIndex - sectionSize + 1}` : "";
+  const nextHref = sectionIndex < totalSections - 1 ? `#set-${startIndex + sectionSize + 1}` : "";
+  const navMarkup = `
+    <nav class="section-nav" aria-label="Section navigation">
+      ${
+        previousHref
+          ? `<a class="section-jump" href="${previousHref}" aria-label="Jump to previous hundred">Prev</a>`
+          : `<span class="section-jump is-disabled" aria-hidden="true">Prev</span>`
+      }
+      ${
+        nextHref
+          ? `<a class="section-jump" href="${nextHref}" aria-label="Jump to next hundred">Next</a>`
+          : `<span class="section-jump is-disabled" aria-hidden="true">Next</span>`
+      }
+    </nav>
+  `;
 
   section.innerHTML = `
     <header class="section-header">
       <span class="section-index">${String(endIndex).padStart(4, "0")}</span>
       <span class="section-label">Characters ${startIndex + 1}-${endIndex}</span>
+      ${navMarkup}
     </header>
     <div class="section-grid" data-state="idle"></div>
   `;
 
   const grid = section.querySelector(".section-grid");
   section.dataset.sectionIndex = String(sections.length);
-  const record = { section, grid, items, rendered: false };
+  const record = {
+    section,
+    grid,
+    items,
+    markup: items.map(buildCardMarkup).join(""),
+    rendered: false,
+  };
   updateSectionHeight(record);
   sections.push(record);
   return record;
@@ -133,10 +168,11 @@ function render() {
   }
 
   const fragment = document.createDocumentFragment();
+  const totalSections = Math.ceil(entries.length / sectionSize);
 
   for (let index = 0; index < entries.length; index += sectionSize) {
     const slice = entries.slice(index, index + sectionSize);
-    const record = buildSection(index, slice);
+    const record = buildSection(index, slice, totalSections);
     fragment.appendChild(record.section);
   }
 
@@ -168,6 +204,7 @@ function render() {
       sections.forEach((record) => {
         updateSectionHeight(record);
         if (record.rendered) {
+          record.grid.innerHTML = "";
           renderSection(record);
         }
       });
