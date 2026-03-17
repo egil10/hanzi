@@ -3,10 +3,14 @@ const sectionSize = 100;
 const mobileBreakpoint = 560;
 const minCardWidth = 106;
 const gapSize = 12;
-const preloadMargin = "1400px 0px";
-const unloadDistance = 2200;
+const preloadMargin = "2600px 0px";
+const unloadDistance = 3200;
+const eagerNeighborRange = 3;
 const container = document.getElementById("hanzi-grid");
+const backToTopButton = document.getElementById("back-to-top");
 const sections = [];
+let renderQueue = new Set();
+let renderScheduled = false;
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -84,6 +88,91 @@ function clearSection(record) {
   record.rendered = false;
 }
 
+function flushRenderQueue() {
+  renderScheduled = false;
+  const batch = Array.from(renderQueue).sort((left, right) => left.index - right.index).slice(0, 6);
+
+  batch.forEach((record) => {
+    renderQueue.delete(record);
+    if (!record.rendered) {
+      renderSection(record);
+    }
+  });
+
+  if (renderQueue.size) {
+    scheduleRenderFlush();
+  }
+}
+
+function scheduleRenderFlush() {
+  if (renderScheduled) {
+    return;
+  }
+
+  renderScheduled = true;
+  window.requestAnimationFrame(flushRenderQueue);
+}
+
+function queueVisibleSection(record) {
+  if (record.rendered || renderQueue.has(record)) {
+    return;
+  }
+
+  renderQueue.add(record);
+  scheduleRenderFlush();
+}
+
+function queueSectionRange(start, end) {
+  const lower = Math.max(0, start);
+  const upper = Math.min(sections.length - 1, end);
+
+  for (let index = lower; index <= upper; index += 1) {
+    queueVisibleSection(sections[index]);
+  }
+}
+
+function estimateClosestSectionIndex() {
+  const probe = window.scrollY + window.innerHeight * 0.35;
+
+  for (let index = 0; index < sections.length; index += 1) {
+    const record = sections[index];
+    if (record.section.offsetTop + record.section.offsetHeight >= probe) {
+      return index;
+    }
+  }
+
+  return sections.length - 1;
+}
+
+function primeViewportSections() {
+  if (!sections.length) {
+    return;
+  }
+
+  const center = estimateClosestSectionIndex();
+  queueSectionRange(center - eagerNeighborRange, center + eagerNeighborRange);
+}
+
+function reconcileFarSections() {
+  const viewportTop = window.scrollY;
+  const viewportBottom = viewportTop + window.innerHeight;
+
+  sections.forEach((record) => {
+    if (!record.rendered) {
+      return;
+    }
+
+    const top = record.section.offsetTop;
+    const bottom = top + record.section.offsetHeight;
+    const tooFarAbove = viewportTop - bottom > unloadDistance;
+    const tooFarBelow = top - viewportBottom > unloadDistance;
+
+    if (tooFarAbove || tooFarBelow) {
+      clearSection(record);
+    }
+  });
+}
+
 function buildSection(startIndex, items, totalSections) {
   const section = document.createElement("section");
   section.className = "hanzi-section";
@@ -120,6 +209,7 @@ function buildSection(startIndex, items, totalSections) {
   const grid = section.querySelector(".section-grid");
   section.dataset.sectionIndex = String(sections.length);
   const record = {
+    index: sections.length,
     section,
     grid,
     items,
@@ -131,32 +221,12 @@ function buildSection(startIndex, items, totalSections) {
   return record;
 }
 
-function queueVisibleSection(record) {
-  if (record.rendered) {
+function syncBackToTopButton() {
+  if (!backToTopButton) {
     return;
   }
 
-  window.requestAnimationFrame(() => renderSection(record));
-}
-
-function reconcileFarSections() {
-  const viewportTop = window.scrollY;
-  const viewportBottom = viewportTop + window.innerHeight;
-
-  sections.forEach((record) => {
-    if (!record.rendered) {
-      return;
-    }
-
-    const top = record.section.offsetTop;
-    const bottom = top + record.section.offsetHeight;
-    const tooFarAbove = viewportTop - bottom > unloadDistance;
-    const tooFarBelow = top - viewportBottom > unloadDistance;
-
-    if (tooFarAbove || tooFarBelow) {
-      clearSection(record);
-    }
-  });
+  backToTopButton.dataset.visible = window.scrollY > 700 ? "true" : "false";
 }
 
 function render() {
@@ -192,10 +262,13 @@ function render() {
 
   sections.forEach((record, index) => {
     observer.observe(record.section);
-    if (index < 4) {
-      renderSection(record);
+    if (index < 8) {
+      queueVisibleSection(record);
     }
   });
+
+  primeViewportSections();
+  syncBackToTopButton();
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
@@ -208,6 +281,7 @@ function render() {
           renderSection(record);
         }
       });
+      primeViewportSections();
       reconcileFarSections();
     }, 80);
   });
@@ -216,17 +290,24 @@ function render() {
   window.addEventListener(
     "scroll",
     () => {
+      syncBackToTopButton();
+
       if (scrollTimer) {
         return;
       }
 
       scrollTimer = window.setTimeout(() => {
         scrollTimer = 0;
+        primeViewportSections();
         reconcileFarSections();
-      }, 120);
+      }, 90);
     },
     { passive: true }
   );
+
+  window.addEventListener("hashchange", () => {
+    window.setTimeout(primeViewportSections, 0);
+  });
 }
 
 render();

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <a id="top"></a>
     <div class="page-shell">
       <header class="hero">
         <p class="hero-mark">字</p>
@@ -26,6 +27,15 @@
           <p class="subtitle">
             10,000 simplified Chinese characters, arranged as a calm scroll of square cards.
           </p>
+          <a class="repo-link" href="https://github.com/egil10/hanzi" target="_blank" rel="noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.72.08-.72 1.21.09 1.84 1.23 1.84 1.23 1.07 1.82 2.8 1.3 3.48.99.11-.77.42-1.3.76-1.6-2.66-.3-5.47-1.32-5.47-5.9 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.53.12-3.18 0 0 1-.32 3.3 1.23a11.53 11.53 0 0 1 6 0c2.29-1.55 3.29-1.23 3.29-1.23.66 1.65.25 2.88.13 3.18.77.84 1.23 1.91 1.23 3.22 0 4.59-2.82 5.59-5.5 5.89.43.37.82 1.1.82 2.22v3.29c0 .32.21.69.83.58A12 12 0 0 0 12 .5Z"
+              />
+            </svg>
+            <span>GitHub</span>
+          </a>
         </div>
         <div class="hero-meta">
           <p>简体字</p>
@@ -52,6 +62,10 @@
         <div id="hanzi-grid" class="sections" aria-live="polite"></div>
       </main>
     </div>
+
+    <a id="back-to-top" class="back-to-top" href="#top" aria-label="Back to top">
+      <span>Top</span>
+    </a>
 
     <script src="data/hanzi-10000.js"></script>
     <script src="app.js"></script>
